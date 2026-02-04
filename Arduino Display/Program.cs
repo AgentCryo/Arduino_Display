@@ -1,4 +1,5 @@
-﻿using Arduino_Display.Drawing;
+﻿using System.Numerics;
+using Arduino_Display.Drawing;
 
 namespace Arduino_Display;
 
@@ -9,7 +10,7 @@ using Raylib_cs;
 class Program
 {
     public const byte ScreenSize = 255;
-    public const byte PixelScale = 2;
+    public const byte PixelScale = 4;
     
     static readonly byte[] White   = [255, 255, 255];
     static readonly byte[] Cyan    = [0,   255, 255];
@@ -19,6 +20,11 @@ class Program
     static readonly byte[] Blue    = [0,   0,   255];
     static readonly byte[] Green   = [0,   255, 0];
 
+    static readonly (float, float, float)[] OriginalCube = [(0, 0, 0), (0, 64, 0), (64, 0, 0), (64, 64, 0), (0, 0, 64), (0, 64, 64), (64, 0, 64), (64, 64, 64)];
+    static (float, float, float)[] Cube = [(0, 0, 0), (0, 64, 0), (64, 0, 0), (64, 64, 0), (0, 0, 64), (0, 64, 64), (64, 0, 64), (64, 64, 64)];
+    static readonly (byte, byte)[] CubeIndices = [(0, 1), (1, 3), (3, 2), (2, 0), (4, 5), (5, 7), (7, 6), (6, 4), (0, 4), (1, 5), (2, 6), (3, 7)];
+
+    static readonly float FocalLength = 70;
     
     static void Main(string[] args)
     {
@@ -32,8 +38,12 @@ class Program
         Raylib.ClearBackground(Color.Black);
         Raylib.SetTargetFPS(60);
         long frame = 0;
-
+        float time = 0;
+        
         byte[] triangle = [10, 30, 20, 10, 50, 50];
+
+        int dir = 1;
+        Vector3 position = new Vector3(-10, -10, 32);
         
         while (!Raylib.WindowShouldClose())
         {
@@ -57,6 +67,36 @@ class Program
             WireFrame.DrawLine(triangle[0], triangle[1], triangle[2], triangle[3], Red);
             WireFrame.DrawLine(triangle[2], triangle[3], triangle[4], triangle[5], Red);
             WireFrame.DrawLine(triangle[4], triangle[5], triangle[0], triangle[1], Red);
+            
+            //WireFrame.DrawLine(11 * 5, 16 * 5, 17 * 5, 16 * 5, White);
+            //WireFrame.DrawLine(11 * 5, 16 * 5, 8  * 5, 14 * 5, White);
+            //WireFrame.DrawLine(11 * 5, 16 * 5, 12 * 5, 10 * 5, White);
+            
+            //WireFrame.DrawLine(17 * 5, 16 * 5, 14 * 5, 14 * 5, White);
+            //WireFrame.DrawLine(9  * 5, 8  * 5, 8  * 5, 14 * 5, White);
+            //WireFrame.DrawLine(9  * 5, 8  * 5, 12 * 5, 10 * 5, White);
+            //WireFrame.DrawLine(12 * 5, 10 * 5, 18 * 5, 10 * 5, White);
+            //WireFrame.DrawLine(15 * 5, 8  * 5, 18 * 5, 10 * 5, White);
+            //WireFrame.DrawLine(15 * 5, 8  * 5, 14 * 5, 14 * 5, White);
+            //WireFrame.DrawLine(17 * 5, 16 * 5, 18 * 5, 10 * 5, White);
+            //WireFrame.DrawLine(8  * 5, 14 * 5, 14 * 5, 14 * 5, White);
+            //WireFrame.DrawLine(9  * 5, 8  * 5, 15 * 5, 8  * 5, White);
+
+            time += Raylib.GetFrameTime();
+            position.X = float.Sin(time)*40 - 32;
+            position.Y = float.Sin(time*2)*40 - 32;
+            for (int v = 0; v < Cube.Length; v++) {
+                Cube[v].Item1 = OriginalCube[v].Item1 + position.X;
+                Cube[v].Item2 = OriginalCube[v].Item2 + position.Y;
+                Cube[v].Item3 = OriginalCube[v].Item3 + position.Z;
+            }
+            for (int i = 0; i < CubeIndices.Length; i++) {
+                WireFrame.DrawLine(
+                    (byte)(FocalLength * Cube[CubeIndices[i].Item1].Item1/(FocalLength + Cube[CubeIndices[i].Item1].Item3) + ScreenSize/2), (byte)(FocalLength * Cube[CubeIndices[i].Item1].Item2/(FocalLength + Cube[CubeIndices[i].Item1].Item3) + ScreenSize/2),
+                    (byte)(FocalLength * Cube[CubeIndices[i].Item2].Item1/(FocalLength + Cube[CubeIndices[i].Item2].Item3) + ScreenSize/2), (byte)(FocalLength * Cube[CubeIndices[i].Item2].Item2/(FocalLength + Cube[CubeIndices[i].Item2].Item3) + ScreenSize/2),
+                    White
+                    );
+            }
             
             WireFrame.DrawCircle(64, 64, 16, Cyan);
             
